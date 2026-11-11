@@ -18,6 +18,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sight-In">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- Offline support: sw.js saves the page, icons and fonts. It registers before the font
+     stylesheet, because that stylesheet can stall on a weak signal and hold back later scripts. -->
+<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
@@ -370,9 +373,6 @@ if(new URLSearchParams(location.search).has("install")){
   history.replaceState(null,"",location.pathname+location.hash); // a home screen copy must not reopen the panel
   if(!standalone)openInstall();
 }
-
-// Offline support: sw.js saves the page, icons and fonts for launches with no signal.
-if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
 })();
 </script>
 </body>
