@@ -82,7 +82,7 @@ self.addEventListener("fetch", event => {
   if (url.href.startsWith(SCOPE)) {
     staleWhileRevalidate(event, url.href, refresh => refresh);
   } else if (url.origin === "https://fonts.googleapis.com") {
-    staleWhileRevalidate(event, url.href, refresh => withDeadline(refresh, FONT_CSS_WAIT_MS, emptyStylesheet));
+    staleWhileRevalidate(event, url.href, refresh => withDeadline(refresh.then(bufferStylesheet), FONT_CSS_WAIT_MS, emptyStylesheet));
   } else if (url.origin === "https://fonts.gstatic.com") {
     cacheFirst(event, url.href);
   }
@@ -101,7 +101,9 @@ function staleWhileRevalidate(event, key, onMiss) {
     return response;
   });
   event.waitUntil(refresh.then(() => {}, () => {}));
-  event.respondWith(cache.then(c => c.match(key, { ignoreVary: true })).then(hit => hit || onMiss(refresh)));
+  // A saved copy that a browser would refuse counts as missing, and the refresh replaces it.
+  event.respondWith(cache.then(c => c.match(key, { ignoreVary: true }))
+    .then(hit => (hit && isSavable(hit) ? hit : onMiss(refresh))));
 }
 
 // Font files never change at a given URL, so the network is only for a first fetch.
@@ -119,6 +121,12 @@ function cacheFirst(event, key) {
 // A redirected copy is never saved: browsers refuse one for a page load.
 function isSavable(response) {
   return response.ok && !response.redirected;
+}
+
+// Read the whole stylesheet, so a body that stalls halfway also counts against the deadline.
+async function bufferStylesheet(response) {
+  if (!response.ok) return emptyStylesheet();
+  return new Response(await response.text(), { headers: { "Content-Type": "text/css" } });
 }
 
 function withDeadline(promise, ms, fallback) {
