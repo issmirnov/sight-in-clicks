@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#dcf53c">
+<title>Sight-In Clicks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one column. Settings chips, then the target you tap, then a fixed readout bar at the bottom. */
+:root{
+  --bg:#f3f4ee; --surface:#ffffff; --fg:#191b14; --muted:#5f6455; --line:#d8dbcd;
+  --sel-bg:#191b14; --sel-fg:#dcf53c; --up:#c2381d;
+  /* the paper target itself: fixed physical colors */
+  --paper:#dcf53c; --cell:#141510; --gridline:#cfe63a; --orange:#e8492c; --hole:#f4ff63; --mark:#ffffff;
+  color-scheme:light;
+  --display:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111310; --surface:#1b1e18; --fg:#ecefe3; --muted:#9ba190; --line:#2e3329;
+  --sel-bg:#dcf53c; --sel-fg:#141510; --up:#ff7a5c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111310; --surface:#1b1e18; --fg:#ecefe3; --muted:#9ba190; --line:#2e3329;
+  --sel-bg:#dcf53c; --sel-fg:#141510; --up:#ff7a5c; color-scheme:dark}
+
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:15px;line-height:1.4;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:16px calc(176px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:.01em;margin:0;line-height:1;text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0;font-size:13.5px}
+.row{display:flex;flex-direction:column;gap:6px}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 14px/1 var(--body);padding:9px 12px;border-radius:999px;border:1px solid var(--line);
+  background:var(--surface);color:var(--fg);cursor:pointer;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{background:var(--sel-bg);color:var(--sel-fg);border-color:var(--sel-bg)}
+.chip:focus-visible,.btn:focus-visible{outline:2px solid var(--up);outline-offset:2px}
+.custom{display:flex;align-items:center;gap:6px}
+.custom input{width:72px;font:500 14px var(--mono);padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+.target-head{display:flex;justify-content:space-between;align-items:end;gap:8px;flex-wrap:wrap}
+.hint{font-size:13px;color:var(--muted)}
+.tools{display:flex;gap:6px}
+.btn{font:600 13px/1 var(--body);padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.btn:disabled{opacity:.4;cursor:default}
+svg#tgt{display:block;width:100%;max-width:100%;height:auto;touch-action:manipulation;cursor:crosshair;border-radius:4px}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--surface);border-top:1px solid var(--line);
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.bar-in{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dials{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dial{display:flex;align-items:baseline;gap:8px;min-width:0}
+.dial .arrow{font-family:var(--display);font-size:26px;line-height:1;color:var(--up);width:20px;text-align:center}
+.dial .n{font-family:var(--display);font-weight:700;font-size:44px;line-height:.9;font-variant-numeric:tabular-nums}
+.dial .w{font-size:13px;color:var(--muted);line-height:1.15}
+.dial .w b{display:block;color:var(--fg);font-size:15px;letter-spacing:.06em}
+.dial.hold .n,.dial.hold .arrow{color:var(--muted)}
+.detail{font:500 12.5px/1.35 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.example{color:var(--up)}
+@media (prefers-reduced-motion:no-preference){.hole{transition:r .15s}}
+
+html{padding-top:env(safe-area-inset-top,0px)}
+body{margin:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Sight-In Clicks</h1>
+    <p class="sub">Tap where your shots landed. The bar at the bottom shows how many clicks to dial.</p>
+  </header>
+
+  <div class="row">
+    <span class="lbl">Distance (yards)</span>
+    <div class="chips" id="dist">
+      <button class="chip" data-v="25">25</button>
+      <button class="chip" data-v="50">50</button>
+      <button class="chip" data-v="100">100</button>
+      <button class="chip" data-v="200">200</button>
+      <label class="custom"><span class="hint">or</span><input id="distIn" type="number" inputmode="numeric" min="5" max="1000" aria-label="Custom distance in yards"></label>
+    </div>
+  </div>
+
+  <div class="row">
+    <span class="lbl">Optic click value</span>
+    <div class="chips" id="optic">
+      <button class="chip" data-v="moa0.5">½ MOA · EOTech, Tango-MSR</button>
+      <button class="chip" data-v="moa0.25">¼ MOA</button>
+      <button class="chip" data-v="mil0.1">0.1 MRAD</button>
+      <button class="chip" data-v="moa1">1 MOA</button>
+    </div>
+  </div>
+
+  <div class="row">
+    <span class="lbl">Aim point</span>
+    <div class="chips" id="aim">
+      <button class="chip" data-v="c">Center</button>
+      <button class="chip" data-v="tl">Top left</button>
+      <button class="chip" data-v="tr">Top right</button>
+      <button class="chip" data-v="bl">Bottom left</button>
+      <button class="chip" data-v="br">Bottom right</button>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="target-head">
+      <span class="hint" id="count">Tap each hole. Clicks use the group center.</span>
+      <div class="tools">
+        <button class="btn" id="undo">Undo</button>
+        <button class="btn" id="clear">Clear</button>
+      </div>
+    </div>
+    <svg id="tgt" viewBox="-6.6 -9.2 13.2 18.4" role="img" aria-label="12 by 18 inch sight-in target with 1 inch grid"></svg>
+    <p class="note">Grid squares are 1 inch. Turn each dial toward the arrow shown. Clicks are rounded to the nearest whole click; the exact value is listed under the dials.</p>
+  </div>
+</div>
+
+<div class="bar" aria-live="polite">
+  <div class="bar-in">
+    <div class="dials">
+      <div class="dial" id="dV"><span class="arrow">↑</span><span class="n">0</span><span class="w"><b>UP</b>elevation</span></div>
+      <div class="dial" id="dH"><span class="arrow">→</span><span class="n">0</span><span class="w"><b>RIGHT</b>windage</span></div>
+    </div>
+    <div class="detail" id="detail"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+const NS="http://www.w3.org/2000/svg";
+const svg=document.getElementById("tgt");
+const AIMS={c:[0,0],tl:[-2.5,4.5],tr:[2.5,4.5],bl:[-2.5,-4.5],br:[2.5,-4.5]};
+const AIM_NAMES={c:"center",tl:"top left",tr:"top right",bl:"bottom left",br:"bottom right"};
+const S={dist:50,optic:"moa0.5",aim:"c",shots:[[-1.15,-2.25],[-0.7,-1.75],[-1.35,-1.55]],example:true};
+try{const s=JSON.parse(localStorage.getItem("sightin")||"{}");
+  if(s.dist)S.dist=s.dist; if(s.optic)S.optic=s.optic; if(s.aim)S.aim=s.aim;}catch(e){}
+function save(){try{localStorage.setItem("sightin",JSON.stringify({dist:S.dist,optic:S.optic,aim:S.aim}))}catch(e){}}
+
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);(parent||svg).appendChild(e);return e;}
+const css=v=>`var(--${v})`;
+
+// Draw the paper target (inches, y up is negative in SVG)
+function drawTarget(){
+  el("rect",{x:-6.6,y:-9.2,width:13.2,height:18.4,fill:css("paper"),rx:.08});
+  el("rect",{x:-6,y:-8,width:12,height:16,fill:css("cell")});
+  const g=el("g",{stroke:css("gridline"),"stroke-width":.035});
+  for(let x=-6;x<=6;x++)el("line",{x1:x,y1:-8,x2:x,y2:8},g);
+  for(let y=-8;y<=8;y++)el("line",{x1:-6,y1:y,x2:6,y2:y},g);
+  const b=el("g",{stroke:css("paper"),"stroke-width":.07,fill:"none"});
+  el("rect",{x:-2,y:-2,width:4,height:4},b);
+  [[-4,-6],[1,-6],[-4,3],[1,3]].forEach(([x,y])=>el("rect",{x,y,width:3,height:3},b));
+  el("rect",{x:-1,y:-1,width:2,height:2,fill:css("orange")});
+  [[-3,-5],[2,-5],[-3,4],[2,4]].forEach(([x,y])=>el("rect",{x,y,width:1,height:1,fill:css("orange")}));
+  const t=el("g",{fill:css("cell"),"font-family":"IBM Plex Mono, monospace","font-size":.34,"text-anchor":"middle","font-weight":500});
+  for(let x=-5;x<=5;x++){const lab=String(Math.abs(x));
+    el("text",{x,y:-8.25},t).textContent=lab; el("text",{x,y:8.55},t).textContent=lab;}
+  for(let y=-7;y<=7;y++){const lab=String(Math.abs(y));
+    el("text",{x:-6.3,y:-y+.12},t).textContent=lab; el("text",{x:6.3,y:-y+.12},t).textContent=lab;}
+  const top=el("text",{x:-5.95,y:-8.7,fill:css("cell"),"font-family":"Saira Condensed, sans-serif","font-size":.42,"font-weight":700},);
+  top.textContent="1 IN GRID";
+}
+drawTarget();
+const aimLayer=el("g",{}); const shotLayer=el("g",{}); const markLayer=el("g",{"pointer-events":"none"});
+
+function opticInchesPerClick(){
+  const unit=S.optic.slice(0,3), v=parseFloat(S.optic.slice(3));
+  return unit==="mil" ? v*3.6*S.dist/100 : v*1.047*S.dist/100;
+}
+function opticLabel(){
+  const unit=S.optic.slice(0,3), v=parseFloat(S.optic.slice(3));
+  return unit==="mil" ? `${v} MRAD/click` : `${v} MOA/click`;
+}
+
+function render(){
+  // chips
+  document.querySelectorAll("#dist .chip").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.v===S.dist));
+  const din=document.getElementById("distIn"); if(document.activeElement!==din) din.value=[25,50,100,200].includes(S.dist)?"":S.dist;
+  document.querySelectorAll("#optic .chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.optic));
+  document.querySelectorAll("#aim .chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.aim));
+
+  // aim point marker
+  aimLayer.innerHTML=""; const [ax,ay]=AIMS[S.aim];
+  el("circle",{cx:ax,cy:-ay,r:.62,fill:"none",stroke:css("mark"),"stroke-width":.06,"stroke-dasharray":".18 .12"},aimLayer);
+  el("circle",{cx:ax,cy:-ay,r:.07,fill:css("mark")},aimLayer);
+
+  // shots
+  shotLayer.innerHTML=""; markLayer.innerHTML="";
+  S.shots.forEach(([x,y])=>{
+    el("circle",{cx:x,cy:-y,r:.34,fill:css("hole"),opacity:.85,class:"hole"},shotLayer);
+    el("circle",{cx:x,cy:-y,r:.11,fill:css("cell")},shotLayer);
+  });
+
+  const n=S.shots.length;
+  document.getElementById("undo").disabled=!n||S.example;
+  document.getElementById("clear").disabled=!n;
+  const cnt=document.getElementById("count");
+  const dV=document.getElementById("dV"), dH=document.getElementById("dH"), det=document.getElementById("detail");
+
+  if(!n){
+    cnt.textContent="Tap each hole. Clicks use the group center.";
+    setDial(dV,0,"UP","↑",true); setDial(dH,0,"RIGHT","→",true);
+    det.textContent=`${S.dist} yd · ${opticLabel()} · aim ${AIM_NAMES[S.aim]}. Tap the target to add shots.`;
+    return;
+  }
+  const cx=S.shots.reduce((a,s)=>a+s[0],0)/n, cy=S.shots.reduce((a,s)=>a+s[1],0)/n;
+  // group center marker + line to aim
+  el("line",{x1:cx,y1:-cy,x2:ax,y2:-ay,stroke:css("mark"),"stroke-width":.05,"stroke-dasharray":".15 .1"},markLayer);
+  const m=el("g",{stroke:css("orange"),"stroke-width":.09},markLayer);
+  el("line",{x1:cx-.45,y1:-cy,x2:cx+.45,y2:-cy},m); el("line",{x1:cx,y1:-cy-.45,x2:cx,y2:-cy+.45},m);
+  el("circle",{cx,cy:-cy,r:.2,fill:"none",stroke:css("mark"),"stroke-width":.05},markLayer);
+
+  cnt.innerHTML = S.example
+    ? `<span class="example">Example group shown.</span> Tap the target to start your own.`
+    : `${n} shot${n>1?"s":""}. Orange cross is the group center.`;
+
+  const dx=ax-cx, dy=ay-cy;          // correction in inches (+ = move impact right / up)
+  const ipc=opticInchesPerClick();
+  const kx=dx/ipc, ky=dy/ipc;
+  const rx=Math.round(kx), ry=Math.round(ky);
+  setDial(dV,Math.abs(ry), ry>=0?"UP":"DOWN", ry>=0?"↑":"↓", ry===0);
+  setDial(dH,Math.abs(rx), rx>=0?"RIGHT":"LEFT", rx>=0?"→":"←", rx===0);
+
+  const vWord = dy>0?"low":"high", hWord = dx>0?"left":"right";
+  const moaPerIn = 100/(1.047*S.dist);
+  const fmt=v=>Math.abs(v).toFixed(1);
+  det.innerHTML =
+    `Group ${fmt(dy)}" ${Math.abs(dy)<.05?"level":vWord}, ${fmt(dx)}" ${Math.abs(dx)<.05?"centered":hWord} of aim · `+
+    `${fmt(dy*moaPerIn)} / ${fmt(dx*moaPerIn)} MOA<br>`+
+    `Exact: ${fmt(ky)} elev, ${fmt(kx)} wind clicks · ${S.dist} yd · ${opticLabel()}`;
+}
+function setDial(d,n,word,arrow,hold){
+  d.querySelector(".n").textContent=n;
+  d.querySelector(".arrow").textContent=hold?"·":arrow;
+  d.querySelector(".w b").textContent=hold?"HOLD":word;
+  d.classList.toggle("hold",hold);
+}
+
+// interactions
+function chipGroup(id,fn){document.getElementById(id).addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;fn(b.dataset.v);save();render();});}
+chipGroup("dist",v=>S.dist=+v);
+chipGroup("optic",v=>S.optic=v);
+chipGroup("aim",v=>S.aim=v);
+document.getElementById("distIn").addEventListener("input",e=>{const v=parseFloat(e.target.value);if(v>=5&&v<=1000){S.dist=v;save();render();}});
+document.getElementById("undo").addEventListener("click",()=>{S.shots.pop();render();});
+document.getElementById("clear").addEventListener("click",()=>{S.shots=[];S.example=false;render();});
+
+svg.addEventListener("click",e=>{
+  const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+  const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+  const x=Math.max(-6,Math.min(6,p.x)), y=Math.max(-8,Math.min(8,-p.y));
+  if(S.example){S.shots=[];S.example=false;}
+  S.shots.push([+x.toFixed(2),+y.toFixed(2)]);
+  render();
+});
+
+render();
+})();
+</script>
+</body>
+</html>
