@@ -5,6 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#dcf53c">
 <title>Sight-In Clicks</title>
+<meta name="description" content="Tap where your shots landed on a 1-inch grid target and see how many scope clicks to dial.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Sight-In Clicks">
+<meta property="og:description" content="Tap where your shots landed on a 1-inch grid target and see how many scope clicks to dial.">
+<meta property="og:url" content="https://issmirnov.github.io/sight-in-clicks/">
+<meta property="og:image" content="https://issmirnov.github.io/sight-in-clicks/icons/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sight-In">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
@@ -66,13 +79,39 @@ svg#tgt{display:block;width:100%;max-width:100%;height:auto;touch-action:manipul
 
 html{padding-top:env(safe-area-inset-top,0px)}
 body{margin:0}
+
+/* Install: header button plus a panel that is a bottom sheet on phones and a centered card on wide screens. */
+[hidden]{display:none!important}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.install-btn{flex:none;white-space:nowrap}
+@media (display-mode: standalone){.install-btn{display:none}}
+.sheet{border:0;padding:0;margin:auto auto 0;width:100%;max-width:560px;max-height:calc(100% - 24px);
+  background:var(--surface);color:var(--fg);border-radius:16px 16px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+.sheet::backdrop{background:rgba(10,11,8,.55)}
+.sheet form{display:flex;flex-direction:column;gap:14px;
+  padding:22px max(18px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
+.sheet h2{font-family:var(--display);font-weight:700;font-size:26px;line-height:1;margin:0}
+.sheet p{margin:0}
+.sheet ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
+.sheet li::marker{font-family:var(--display);font-weight:700}
+.sheet .variant{display:flex;flex-direction:column;gap:10px}
+.sheet .fine{font-size:13px;color:var(--muted)}
+.sheet .actions{display:flex;justify-content:flex-end}
+.btn.primary{background:var(--sel-bg);color:var(--sel-fg);border-color:var(--sel-bg);font-size:16px;padding:13px 20px;align-self:flex-start}
+.glyph{display:inline-block;width:1.15em;height:1.15em;vertical-align:-.2em}
+.qr{display:block;width:176px;height:176px;border-radius:8px;background:#fff}
+#installLink{display:block;margin-top:4px;color:inherit;font-family:var(--mono);font-size:13px;overflow-wrap:anywhere}
+@media (min-width:640px){.sheet{margin:auto;border-radius:16px}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>Sight-In Clicks</h1>
-    <p class="sub">Tap where your shots landed. The bar at the bottom shows how many clicks to dial.</p>
+  <header class="head">
+    <div>
+      <h1>Sight-In Clicks</h1>
+      <p class="sub">Tap where your shots landed. The bar at the bottom shows how many clicks to dial.</p>
+    </div>
+    <button class="btn install-btn" id="installBtn" type="button">Install</button>
   </header>
 
   <div class="row">
@@ -129,6 +168,42 @@ body{margin:0}
     <div class="detail" id="detail"></div>
   </div>
 </div>
+
+<dialog id="install" class="sheet" aria-labelledby="installTitle">
+  <form method="dialog">
+    <h2 id="installTitle">Add to your home screen</h2>
+    <p>It opens in one tap and works at the range with no signal.</p>
+
+    <div class="variant" data-for="prompt" hidden>
+      <button class="btn primary" id="installNow" type="button">Install</button>
+    </div>
+
+    <div class="variant" data-for="ios" hidden>
+      <ol>
+        <li>Tap the Share button <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M8 7l4-4 4 4M8 10H6v11h12V10h-2"/></svg>. If you only see <b>···</b>, tap that first.</li>
+        <li>Tap <b>Add to Home Screen</b>. If you don't see it, scroll down the list.</li>
+        <li>Tap <b>Add</b>. If you see <b>Open as Web App</b>, leave it on.</li>
+      </ol>
+      <p class="fine">Opened this inside another app? Open it in Safari first.</p>
+    </div>
+
+    <div class="variant" data-for="android" hidden>
+      <ol>
+        <li>Open the browser menu <b>⋮</b>.</li>
+        <li>Tap <b>Install app</b> or <b>Add to Home screen</b>.</li>
+      </ol>
+      <p class="fine">Opened this inside another app? Open it in Chrome first.</p>
+    </div>
+
+    <div class="variant" data-for="desktop" hidden>
+      <img class="qr" src="install-qr.svg" width="176" height="176" alt="QR code for the install link">
+      <p>Scan this with your phone's camera, or open this link on your phone: <a id="installLink" href="./?install">./?install</a></p>
+    </div>
+
+    <p class="fine">After you add it, open it once from your home screen while you have signal. After that it works offline.</p>
+    <div class="actions"><button class="btn" value="close">Done</button></div>
+  </form>
+</dialog>
 
 <script>
 (function(){
@@ -259,6 +334,45 @@ svg.addEventListener("click",e=>{
 });
 
 render();
+
+// Install: the header button and the ?install link open a panel with the steps for this device.
+// iOS only allows Share, then Add to Home Screen. Android browsers hand the page an install prompt.
+const sheet=document.getElementById("install");
+const installBtn=document.getElementById("installBtn");
+const ua=navigator.userAgent;
+const isIOS=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+const isAndroid=/Android/.test(ua);
+const standalone=navigator.standalone===true||matchMedia("(display-mode: standalone)").matches;
+let deferredPrompt=null;
+
+function installVariant(){return isIOS?"ios":isAndroid?(deferredPrompt?"prompt":"android"):"desktop";}
+function openInstall(){
+  const v=installVariant();
+  sheet.querySelectorAll("[data-for]").forEach(el=>el.hidden=el.dataset.for!==v);
+  if(!sheet.open)sheet.showModal();
+}
+async function promptInstall(){
+  const e=deferredPrompt; deferredPrompt=null; // a prompt works only once
+  if(sheet.open)sheet.close();
+  try{await e.prompt();}catch(err){openInstall();}
+}
+installBtn.hidden=standalone;
+installBtn.addEventListener("click",()=>isAndroid&&deferredPrompt?promptInstall():openInstall());
+document.getElementById("installNow").addEventListener("click",()=>deferredPrompt?promptInstall():openInstall());
+sheet.addEventListener("click",e=>{if(e.target===sheet)sheet.close();}); // tap outside the panel
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;if(sheet.open)openInstall();});
+addEventListener("appinstalled",()=>{deferredPrompt=null;installBtn.hidden=true;if(sheet.open)sheet.close();});
+
+const link=new URL("./?install",location.href), installLink=document.getElementById("installLink");
+installLink.href=link.href; installLink.textContent=link.host+link.pathname+link.search;
+
+if(new URLSearchParams(location.search).has("install")){
+  history.replaceState(null,"",location.pathname+location.hash); // a home screen copy must not reopen the panel
+  if(!standalone)openInstall();
+}
+
+// Offline support: sw.js saves the page, icons and fonts for launches with no signal.
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
 })();
 </script>
 </body>

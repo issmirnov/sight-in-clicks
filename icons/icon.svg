@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- The sight-in target: 1-inch grid at 40px per inch, 4-inch box, 2-inch orange center, example group low left. -->
+  <rect width="512" height="512" fill="#dcf53c"/>
+  <rect x="96" y="96" width="320" height="320" fill="#141510"/>
+  <path stroke="#cfe63a" stroke-width="3" d="M136 96V416M176 96V416M216 96V416M256 96V416M296 96V416M336 96V416M376 96V416M96 136H416M96 176H416M96 216H416M96 256H416M96 296H416M96 336H416M96 376H416"/>
+  <rect x="176" y="176" width="160" height="160" fill="none" stroke="#dcf53c" stroke-width="6"/>
+  <rect x="216" y="216" width="80" height="80" fill="#e8492c"/>
+  <g fill="#f4ff63">
+    <circle cx="210" cy="346" r="17"/>
+    <circle cx="228" cy="326" r="17"/>
+    <circle cx="202" cy="318" r="17"/>
+  </g>
+  <g fill="#141510">
+    <circle cx="210" cy="346" r="5.5"/>
+    <circle cx="228" cy="326" r="5.5"/>
+    <circle cx="202" cy="318" r="5.5"/>
+  </g>
+</svg>
